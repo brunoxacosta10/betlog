@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BetLog · Entrar</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;min-height:100vh;display:flex;align-items:center;justify-content:center;
+  background:linear-gradient(135deg,#0f172a,#1e293b);color:#e2e8f0;padding:20px}
+.card{background:#1e293b;border:1px solid #334155;border-radius:16px;padding:32px 28px;width:100%;max-width:360px;
+  box-shadow:0 20px 60px rgba(0,0,0,.4)}
+.logo{font-weight:800;font-size:24px;letter-spacing:-.02em;margin-bottom:4px}
+.logo span{color:#38bdf8}
+.sub{color:#94a3b8;font-size:13px;margin-bottom:24px}
+label{display:block;font-size:12px;color:#94a3b8;margin:14px 0 6px;font-weight:600}
+input{width:100%;padding:12px 14px;border:1px solid #334155;border-radius:10px;background:#0f172a;color:#e2e8f0;font-size:15px}
+input:focus{outline:none;border-color:#38bdf8}
+button{width:100%;margin-top:22px;padding:13px;border:none;border-radius:10px;background:#38bdf8;color:#0f172a;
+  font-weight:700;font-size:15px;cursor:pointer}
+button:active{transform:scale(.99)}
+.err{color:#f87171;font-size:13px;margin-top:14px;min-height:18px;text-align:center}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="logo">Bet<span>Log</span></div>
+  <div class="sub">Registo de apostas da equipa</div>
+  <label>Utilizador</label>
+  <input id="u" autocomplete="username" autocapitalize="off">
+  <label>Palavra-passe</label>
+  <input id="p" type="password" autocomplete="current-password">
+  <button id="go">Entrar</button>
+  <div class="err" id="err"></div>
+</div>
+<script>
+async function login(){
+  const err=document.getElementById("err"); err.textContent="";
+  const r=await fetch("/login",{method:"POST",headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({username:document.getElementById("u").value,password:document.getElementById("p").value})});
+  const d=await r.json();
+  if(d.ok){location.href="/dashboard";}else{err.textContent=d.error||"Erro ao entrar.";}
+}
+document.getElementById("go").onclick=login;
+document.getElementById("p").addEventListener("keydown",e=>{if(e.key==="Enter")login();});
+document.getElementById("u").addEventListener("keydown",e=>{if(e.key==="Enter")document.getElementById("p").focus();});
+</script>
+</body>
+</html>

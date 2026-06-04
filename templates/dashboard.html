@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>BetLog</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Inter,system-ui,sans-serif;background:#0f172a;color:#e2e8f0;padding-bottom:90px}
+header{position:sticky;top:0;z-index:10;background:#1e293b;border-bottom:1px solid #334155;
+  padding:14px 18px;display:flex;align-items:center;justify-content:space-between}
+.logo{font-weight:800;font-size:18px}.logo span{color:#38bdf8}
+.hdr-r{display:flex;align-items:center;gap:12px;font-size:13px;color:#94a3b8}
+.hdr-r a{color:#94a3b8;text-decoration:none;border:1px solid #334155;padding:6px 10px;border-radius:8px}
+.wrap{max-width:760px;margin:0 auto;padding:16px 14px}
+.cards{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:18px}
+.kpi{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:14px}
+.kpi .l{font-size:11px;color:#94a3b8;font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.kpi .v{font-size:22px;font-weight:800;margin-top:4px}
+.v.pos{color:#34d399}.v.neg{color:#f87171}
+h2{font-size:14px;font-weight:700;margin:20px 0 10px;color:#cbd5e1}
+.op{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:13px 14px;margin-bottom:10px}
+.op-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.op-ev{font-weight:600;font-size:15px}
+.op-meta{font-size:12px;color:#94a3b8;margin-top:2px}
+.op-prof{font-weight:800;font-size:17px;white-space:nowrap}
+.op-prof.pos{color:#34d399}.op-prof.neg{color:#f87171}
+.leg{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-top:1px solid #273449;color:#cbd5e1;margin-top:6px}
+.leg .bk{color:#38bdf8;font-weight:600}
+.leg .won{color:#34d399;font-size:11px;border:1px solid #34d399;border-radius:5px;padding:1px 5px;margin-left:6px}
+.op-act{margin-top:8px;text-align:right}
+.op-act button{background:none;border:1px solid #475569;color:#94a3b8;border-radius:7px;padding:5px 10px;font-size:12px;cursor:pointer}
+.fab{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#38bdf8;color:#0f172a;
+  border:none;border-radius:30px;padding:15px 26px;font-weight:700;font-size:15px;cursor:pointer;box-shadow:0 8px 24px rgba(56,189,248,.4);z-index:20}
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:none;align-items:flex-end;justify-content:center;z-index:30}
+.modal.show{display:flex}
+.sheet{background:#1e293b;width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:20px 18px;max-height:92vh;overflow:auto}
+.sheet h3{font-size:17px;margin-bottom:14px}
+label{display:block;font-size:12px;color:#94a3b8;margin:10px 0 5px;font-weight:600}
+input,select,textarea{width:100%;padding:10px 12px;border:1px solid #334155;border-radius:9px;background:#0f172a;color:#e2e8f0;font-size:15px;font-family:inherit}
+input:focus,select:focus,textarea:focus{outline:none;border-color:#38bdf8}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.leg-edit{background:#0f172a;border:1px solid #334155;border-radius:10px;padding:11px;margin-top:10px;position:relative}
+.leg-edit .rm{position:absolute;top:8px;right:8px;background:none;border:none;color:#f87171;font-size:18px;cursor:pointer}
+.leg-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.won-toggle{display:flex;align-items:center;gap:8px;margin-top:8px;font-size:13px;color:#cbd5e1}
+.won-toggle input{width:auto}
+.won-box{display:none;background:rgba(52,211,153,.1);border:1px solid #34d399;border-radius:8px;padding:9px 11px;cursor:pointer}
+.won-box b{color:#34d399}
+.addleg{margin-top:10px;background:none;border:1px dashed #475569;color:#38bdf8;border-radius:9px;padding:10px;width:100%;cursor:pointer;font-weight:600}
+.live{background:#0f172a;border:1px solid #334155;border-radius:9px;padding:10px;margin-top:12px;font-size:13px;color:#cbd5e1}
+.live b{font-size:16px}
+.btns{display:flex;gap:10px;margin-top:16px}
+.btns button{flex:1;padding:12px;border-radius:10px;border:none;font-weight:700;font-size:15px;cursor:pointer}
+.save{background:#38bdf8;color:#0f172a}.cancel{background:#334155;color:#e2e8f0}
+.empty{text-align:center;color:#64748b;padding:40px 0;font-size:14px}
+.admin-bar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.admin-bar select,.admin-bar button{font-size:13px;padding:8px 10px;border-radius:8px;border:1px solid #334155;background:#1e293b;color:#e2e8f0;cursor:pointer;width:auto}
+.utbl{width:100%;font-size:13px;border-collapse:collapse;margin-top:8px}
+.utbl td{padding:7px 6px;border-bottom:1px solid #273449}
+.err{color:#f87171;font-size:13px;margin-top:8px;min-height:16px}
+.goal{background:#1e293b;border:1px solid #334155;border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.goal-top{display:flex;justify-content:space-between;font-size:14px;margin-bottom:8px}
+.goal-top .bk{font-weight:600;color:#38bdf8}
+.goal-top .num{color:#cbd5e1}
+.goal-top .num b{color:#e2e8f0}
+.bar{height:9px;background:#0f172a;border-radius:6px;overflow:hidden;border:1px solid #273449}
+.bar i{display:block;height:100%;border-radius:6px;background:linear-gradient(90deg,#38bdf8,#34d399)}
+.bar i.done{background:#34d399}
+.goal-sub{font-size:11px;color:#94a3b8;margin-top:5px}
+.goal-who{font-size:11px;color:#64748b;margin-bottom:6px;font-weight:600}
+.dep-fab{position:fixed;bottom:20px;right:16px;background:#34d399;color:#0f172a;border:none;border-radius:30px;
+  padding:15px 20px;font-weight:700;font-size:14px;cursor:pointer;box-shadow:0 8px 24px rgba(52,211,153,.4);z-index:20}
+.tabs{display:flex;gap:8px;margin-bottom:14px}
+.tab{flex:1;padding:10px;text-align:center;border:1px solid #334155;border-radius:10px;background:#1e293b;color:#94a3b8;font-weight:600;font-size:13px;cursor:pointer}
+.tab.active{background:#38bdf8;color:#0f172a;border-color:#38bdf8}
+</style>
+</head>
+<body>
+<header>
+  <div class="logo">Bet<span>Log</span></div>
+  <div class="hdr-r">
+    <span id="who"></span>
+    <a href="#" id="pwbtn">Senha</a>
+    <a href="/logout">Sair</a>
+  </div>
+</header>
+
+<div class="wrap">
+  <div class="tabs">
+    <div class="tab active" id="tab-goals" onclick="showTab('goals')">🎯 Metas de hoje</div>
+    <div class="tab" id="tab-bets" onclick="showTab('bets')">📋 Apostas</div>
+  </div>
+
+  <div id="view-goals">
+    <div id="admin-goals-bar" style="display:none;margin-bottom:14px">
+      <button id="manage-goals-btn" style="width:100%;padding:11px;border:1px dashed #475569;background:none;color:#38bdf8;border-radius:10px;font-weight:600;cursor:pointer">⚙ Definir metas da equipa</button>
+    </div>
+    <div id="progress-list"><div class="empty">a carregar…</div></div>
+  </div>
+
+  <div id="view-bets" style="display:none">
+    <div class="cards">
+      <div class="kpi"><div class="l">Lucro/Prej.</div><div class="v" id="k-profit">—</div></div>
+      <div class="kpi"><div class="l">Apostado</div><div class="v" id="k-staked">—</div></div>
+      <div class="kpi"><div class="l">Pendentes</div><div class="v" id="k-pending">—</div></div>
+    </div>
+    <div id="admin-zone" style="display:none">
+      <h2>Vista de administrador</h2>
+      <div class="admin-bar">
+        <select id="filter-user"><option value="">Todos</option></select>
+        <button id="newuser-btn">+ Novo utilizador</button>
+      </div>
+      <div id="per-user"></div>
+    </div>
+    <h2 id="pend-title">⏳ Pendentes (à espera de resultado)</h2>
+    <div id="pending-ops"></div>
+    <h2 id="ops-title">✓ Resolvidas</h2>
+    <div id="ops"><div class="empty">a carregar…</div></div>
+  </div>
+</div>
+
+<button class="fab" id="fab">+ Nova operação</button>
+<button class="dep-fab" id="dep-fab">€ Depósito</button>
+
+<!-- Modal nova operação -->
+<div class="modal" id="modal">
+  <div class="sheet">
+    <h3 id="modal-title">Nova operação</h3>
+    <div class="row2">
+      <div><label>Data</label><input type="date" id="f-date"></div>
+      <div><label>Tipo</label><input id="f-type" placeholder="arbitragem / +EV / simples"></div>
+    </div>
+    <label>Evento / jogo</label>
+    <input id="f-event" placeholder="ex: Benfica vs Porto">
+    <label>Pernas (casa + resultado + valor + odd)</label>
+    <div id="legs"></div>
+    <button class="addleg" id="addleg">+ Adicionar casa</button>
+    <label>Estado</label>
+    <select id="f-status">
+      <option value="pending">Pendente (ainda sem resultado)</option>
+      <option value="resolved">Resolvida (já se sabe quem ganhou)</option>
+    </select>
+    <div id="won-hint" style="font-size:12px;color:#94a3b8;margin-top:6px">Quando resolveres, marca a perna que ganhou em cada casa.</div>
+    <label>Notas (opcional)</label>
+    <textarea id="f-notes" rows="2"></textarea>
+    <div class="live" id="live"></div>
+    <div class="err" id="m-err"></div>
+    <div class="btns">
+      <button class="cancel" id="cancel">Cancelar</button>
+      <button class="save" id="save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<!-- Modal depósito -->
+<div class="modal" id="modal-dep"><div class="sheet">
+  <h3>Registar depósito</h3>
+  <div class="row2">
+    <div><label>Data</label><input type="date" id="d-date"></div>
+    <div><label>Marca</label><select id="d-book"></select></div>
+  </div>
+  <label>Valor depositado €</label>
+  <input id="d-amount" type="number" inputmode="decimal" placeholder="100">
+  <label>Notas (opcional)</label><textarea id="d-notes" rows="2"></textarea>
+  <div class="err" id="d-err"></div>
+  <div class="btns"><button class="cancel" id="d-cancel">Cancelar</button><button class="save" id="d-save">Guardar</button></div>
+</div></div>
+
+<!-- Modal gerir metas (admin) -->
+<div class="modal" id="modal-goals"><div class="sheet">
+  <h3>Definir metas da equipa</h3>
+  <div class="row2">
+    <div><label>Pessoa</label><select id="g-user"></select></div>
+    <div><label>Marca</label><select id="g-book"></select></div>
+  </div>
+  <label>Meta diária de depósitos €</label>
+  <input id="g-target" type="number" inputmode="decimal" placeholder="300">
+  <div class="err" id="g-err"></div>
+  <div class="btns"><button class="cancel" id="g-cancel">Fechar</button><button class="save" id="g-save">Guardar meta</button></div>
+
+  <h2 style="margin-top:18px">Marcas</h2>
+  <div style="display:flex;gap:8px">
+    <input id="nb-name" placeholder="Nova marca (ex: Betano)" style="flex:1">
+    <button class="save" id="nb-add" style="width:auto;padding:10px 16px">+</button>
+  </div>
+  <div id="books-list" style="margin-top:8px"></div>
+
+  <h2 style="margin-top:18px">Metas atuais</h2>
+  <div id="goals-list"></div>
+</div></div>
+
+<!-- Modal senha / novo user -->
+<div class="modal" id="modal2">
+  <div class="sheet">
+    <h3 id="m2-title">Mudar palavra-passe</h3>
+    <div id="m2-body"></div>
+    <div class="err" id="m2-err"></div>
+    <div class="btns">
+      <button class="cancel" id="m2-cancel">Cancelar</button>
+      <button class="save" id="m2-save">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+let ME=null;
+let BOOKS=[];
+async function loadBooks(){
+  const d=await (await fetch("/api/books")).json();
+  BOOKS=d.books.map(b=>b.name);
+}
+function bookOptions(sel){
+  return '<option value="">— escolhe a marca —</option>'+
+    BOOKS.map(b=>`<option value="${b}" ${b===sel?'selected':''}>${b}</option>`).join("");
+}
+const fmt=n=>(n>=0?"+":"")+"€"+n.toFixed(2);
+const el=id=>document.getElementById(id);
+
+async function loadMe(){ ME=await (await fetch("/api/me")).json();
+  el("who").textContent=ME.username+(ME.is_admin?" (admin)":"");
+  if(ME.is_admin){el("admin-zone").style.display="block";loadUsersFilter();}
+}
+async function loadSummary(){
+  const d=await (await fetch("/api/summary")).json();
+  const p=el("k-profit"); p.textContent=fmt(d.total.profit);
+  p.className="v "+(d.total.profit>=0?"pos":"neg");
+  el("k-staked").textContent="€"+d.total.staked.toFixed(2);
+  el("k-pending").textContent=d.total.pending;
+  if(d.is_admin){
+    const pu=el("per-user");
+    const rows=Object.entries(d.per_user).map(([u,s])=>
+      `<div class="op"><div class="op-top"><div><div class="op-ev">${u}</div>
+       <div class="op-meta">${s.ops} operações · €${s.staked.toFixed(2)} apostado${s.pending?` · ${s.pending} pendentes`:''}</div></div>
+       <div class="op-prof ${s.profit>=0?'pos':'neg'}">${fmt(s.profit)}</div></div></div>`).join("");
+    pu.innerHTML=rows||'<div class="empty">Sem dados ainda.</div>';
+  }
+}
+async function loadOps(){
+  const uf=ME&&ME.is_admin?el("filter-user").value:"";
+  const url="/api/ops"+(uf?`?user_id=${uf}`:"");
+  const d=await (await fetch(url)).json();
+  OPS=d.ops;
+  const pend=d.ops.filter(o=>o.status==="pending");
+  const resolved=d.ops.filter(o=>o.status!=="pending");
+  el("pending-ops").innerHTML = pend.length?pend.map(opCard).join(""):'<div class="empty">Nada pendente.</div>';
+  el("ops").innerHTML = resolved.length?resolved.map(opCard).join(""):'<div class="empty">Ainda não há operações resolvidas.</div>';
+}
+function opCard(o){
+  const legs=o.legs.map(l=>`<div class="leg">
+    <span><span class="bk">${l.book||'—'}</span> · ${l.outcome||''} ${l.won?'<span class="won">ganhou</span>':''}</span>
+    <span>€${(+l.stake).toFixed(2)} @ ${(+l.odd).toFixed(2)}</span></div>`).join("");
+  const who=(ME&&ME.is_admin)?` · ${o.username}`:"";
+  const prof = o.status==="pending"
+     ? `<div class="op-prof" style="color:#fbbf24">⏳ €${o.staked.toFixed(2)}</div>`
+     : `<div class="op-prof ${o.profit>=0?'pos':'neg'}">${fmt(o.profit)}</div>`;
+  return `<div class="op"><div class="op-top">
+    <div><div class="op-ev">${o.event||'(sem nome)'}</div>
+      <div class="op-meta">${o.op_date}${o.bet_type?' · '+o.bet_type:''}${who}</div></div>
+    ${prof}</div>
+    ${legs}
+    ${o.notes?`<div class="op-meta" style="margin-top:8px">📝 ${o.notes}</div>`:''}
+    <div class="op-act">
+      <button onclick="editOp(${o.id})" style="border-color:#38bdf8;color:#38bdf8">Editar / resultado</button>
+      <button onclick="delOp(${o.id})">Apagar</button></div></div>`;
+}
+async function loadUsersFilter(){
+  const d=await (await fetch("/api/users")).json();
+  const sel=el("filter-user");
+  sel.innerHTML='<option value="">Todos</option>'+d.users.map(u=>`<option value="${u.id}">${u.username}</option>`).join("");
+}
+async function delOp(id){
+  if(!confirm("Apagar esta operação?"))return;
+  await fetch("/api/ops/"+id,{method:"DELETE"});
+  refresh();
+}
+function refresh(){loadSummary();loadOps();loadProgress();}
+
+// ---- Abas ----
+function showTab(t){
+  el("tab-goals").classList.toggle("active",t==="goals");
+  el("tab-bets").classList.toggle("active",t==="bets");
+  el("view-goals").style.display=t==="goals"?"block":"none";
+  el("view-bets").style.display=t==="bets"?"block":"none";
+}
+
+// ---- Progresso de metas ----
+async function loadProgress(){
+  const d=await (await fetch("/api/progress")).json();
+  const box=el("progress-list");
+  if(ME.is_admin)el("admin-goals-bar").style.display="block";
+  if(!d.progress.length){
+    box.innerHTML='<div class="empty">Sem metas definidas ainda.'+(ME.is_admin?'<br>Carrega em "Definir metas da equipa".':'')+'</div>';
+    return;
+  }
+  // agrupa por pessoa (para o admin)
+  let html="", lastUser=null;
+  d.progress.forEach(p=>{
+    if(ME.is_admin && p.username!==lastUser){html+=`<div class="goal-who">${p.username}</div>`;lastUser=p.username;}
+    const pct=Math.min(p.pct,100);
+    const done=pct>=100;
+    html+=`<div class="goal">
+      <div class="goal-top"><span class="bk">${p.book}</span>
+        <span class="num"><b>€${p.done.toFixed(2)}</b> / €${p.target.toFixed(2)}</span></div>
+      <div class="bar"><i class="${done?'done':''}" style="width:${pct}%"></i></div>
+      <div class="goal-sub">${done?'✓ Meta cumprida!':`Faltam €${p.remaining.toFixed(2)} · ${p.pct}%`}</div>
+    </div>`;
+  });
+  box.innerHTML=html;
+}
+
+let legCount=0, EDIT_ID=null, OPS=[];
+function legHtml(i,l){l=l||{};return `<div class="leg-edit" data-i="${i}">
+  <button class="rm" onclick="this.parentElement.remove();recalc()">×</button>
+  <div class="leg-grid">
+    <div><label>Casa</label><select class="l-book">${bookOptions(l.book)}</select></div>
+    <div><label>Resultado</label><input class="l-out" placeholder="Benfica" value="${l.outcome||''}"></div>
+    <div><label>Valor €</label><input class="l-stake" type="number" inputmode="decimal" value="${l.stake!=null?l.stake:''}" oninput="recalc()"></div>
+    <div><label>Odd</label><input class="l-odd" type="number" inputmode="decimal" value="${l.odd!=null?l.odd:''}" oninput="recalc()"></div>
+  </div>
+  <label class="won-toggle won-box"><input type="checkbox" class="l-won" ${l.won?'checked':''} onchange="recalc()"> <b>✓ Esta foi a que ganhou</b></label>
+</div>`;}
+function addLeg(l){el("legs").insertAdjacentHTML("beforeend",legHtml(legCount++,l));}
+function recalc(){
+  let staked=0,ret=0,won=0;
+  document.querySelectorAll(".leg-edit").forEach(le=>{
+    const s=parseFloat(le.querySelector(".l-stake").value)||0;
+    const o=parseFloat(le.querySelector(".l-odd").value)||0;
+    const w=le.querySelector(".l-won").checked;
+    staked+=s; if(w){ret+=s*o;won++;}
+  });
+  const resolved=el("f-status").value==="resolved";
+  const prof=ret-staked;
+  document.querySelectorAll(".won-box").forEach(b=>b.style.display=resolved?"flex":"none");
+  if(resolved && won===0){
+    el("live").innerHTML=`<span style="color:#f87171">⚠ Marca qual casa ganhou (na caixa verde "✓ Esta foi a que ganhou") para calcular o lucro.</span>`;
+  }else if(resolved){
+    el("live").innerHTML=`Apostado: <b>€${staked.toFixed(2)}</b> · Retorno: <b>€${ret.toFixed(2)}</b> · Resultado: <b style="color:${prof>=0?'#34d399':'#f87171'}">${fmt(prof)}</b>`;
+  }else{
+    el("live").innerHTML=`Apostado: <b>€${staked.toFixed(2)}</b> · <span style="color:#fbbf24">pendente — muda o estado para "Resolvida" quando o jogo acabar</span>`;
+  }
+}
+function openModal(){
+  EDIT_ID=null;
+  el("modal-title")&&(el("modal-title").textContent="Nova operação");
+  el("f-date").value=new Date().toISOString().slice(0,10);
+  el("f-event").value="";el("f-type").value="";el("f-notes").value="";
+  el("f-status").value="pending";
+  el("legs").innerHTML="";legCount=0;addLeg();addLeg();recalc();
+  el("m-err").textContent="";el("modal").classList.add("show");
+}
+function editOp(id){
+  const o=OPS.find(x=>x.id===id); if(!o)return;
+  EDIT_ID=id;
+  el("modal-title")&&(el("modal-title").textContent="Editar operação");
+  el("f-date").value=o.op_date;el("f-event").value=o.event||"";
+  el("f-type").value=o.bet_type||"";el("f-notes").value=o.notes||"";
+  el("f-status").value=o.status||"pending";
+  el("legs").innerHTML="";legCount=0;
+  (o.legs||[]).forEach(l=>addLeg(l));
+  if(!o.legs||!o.legs.length){addLeg();addLeg();}
+  recalc();el("m-err").textContent="";el("modal").classList.add("show");
+}
+async function saveOp(){
+  const legs=[...document.querySelectorAll(".leg-edit")].map(le=>({
+    book:le.querySelector(".l-book").value,outcome:le.querySelector(".l-out").value,
+    stake:parseFloat(le.querySelector(".l-stake").value)||0,
+    odd:parseFloat(le.querySelector(".l-odd").value)||0,
+    won:le.querySelector(".l-won").checked?1:0
+  })).filter(l=>l.stake>0);
+  if(!legs.length){el("m-err").textContent="Mete pelo menos uma perna com valor.";return;}
+  const body={op_date:el("f-date").value,event:el("f-event").value,bet_type:el("f-type").value,
+    notes:el("f-notes").value,status:el("f-status").value,legs};
+  const url=EDIT_ID?("/api/ops/"+EDIT_ID):"/api/ops";
+  const method=EDIT_ID?"PUT":"POST";
+  const r=await fetch(url,{method,headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(r.ok){el("modal").classList.remove("show");refresh();}
+  else{const d=await r.json();el("m-err").textContent=d.error||"Erro a guardar.";}
+}
+el("f-status")&&el("f-status").addEventListener("change",recalc);
+el("fab").onclick=openModal;
+el("addleg").onclick=addLeg;
+el("cancel").onclick=()=>el("modal").classList.remove("show");
+el("save").onclick=saveOp;
+
+// ---- Modal senha / novo user ----
+function openPw(){
+  el("m2-title").textContent="Mudar a minha palavra-passe";
+  el("m2-body").innerHTML='<label>Nova palavra-passe</label><input type="password" id="np">';
+  el("m2-err").textContent="";el("modal2").classList.add("show");
+  el("m2-save").onclick=async()=>{
+    const r=await fetch("/api/password",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({password:el("np").value})});
+    if(r.ok){el("modal2").classList.remove("show");alert("Palavra-passe alterada.");}
+    else{const d=await r.json();el("m2-err").textContent=d.error||"Erro.";}
+  };
+}
+function openNewUser(){
+  el("m2-title").textContent="Novo utilizador";
+  el("m2-body").innerHTML='<label>Utilizador</label><input id="nu" autocapitalize="off">'+
+    '<label>Palavra-passe</label><input type="password" id="nup">';
+  el("m2-err").textContent="";el("modal2").classList.add("show");
+  el("m2-save").onclick=async()=>{
+    const r=await fetch("/api/users",{method:"POST",headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({username:el("nu").value,password:el("nup").value})});
+    if(r.ok){el("modal2").classList.remove("show");loadUsersFilter();alert("Utilizador criado.");}
+    else{const d=await r.json();el("m2-err").textContent=d.error||"Erro.";}
+  };
+}
+el("pwbtn").onclick=e=>{e.preventDefault();openPw();};
+el("m2-cancel").onclick=()=>el("modal2").classList.remove("show");
+document.addEventListener("click",e=>{if(e.target.id==="newuser-btn")openNewUser();});
+document.addEventListener("change",e=>{if(e.target.id==="filter-user"){loadOps();
+  el("ops-title").textContent=e.target.value?"Operações de "+e.target.selectedOptions[0].text:"Todas as operações";}});
+
+// ---- Depósito ----
+el("dep-fab").onclick=()=>{
+  el("d-date").value=new Date().toISOString().slice(0,10);
+  el("d-book").innerHTML=bookOptions();el("d-amount").value="";el("d-notes").value="";
+  el("d-err").textContent="";el("modal-dep").classList.add("show");
+};
+el("d-cancel").onclick=()=>el("modal-dep").classList.remove("show");
+el("d-save").onclick=async()=>{
+  const body={dep_date:el("d-date").value,book:el("d-book").value,
+    amount:parseFloat(el("d-amount").value)||0,notes:el("d-notes").value};
+  const r=await fetch("/api/deposits",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(r.ok){el("modal-dep").classList.remove("show");loadProgress();}
+  else{const d=await r.json();el("d-err").textContent=d.error||"Erro.";}
+};
+
+// ---- Gerir metas (admin) ----
+async function openGoals(){
+  const du=await (await fetch("/api/users")).json();
+  el("g-user").innerHTML=du.users.map(u=>`<option value="${u.id}">${u.username}</option>`).join("");
+  el("g-book").innerHTML=bookOptions();el("g-target").value="";el("g-err").textContent="";
+  await loadBooksList();
+  await loadGoalsList();
+  el("modal-goals").classList.add("show");
+}
+async function loadBooksList(){
+  await loadBooks();
+  const box=el("books-list");
+  box.innerHTML=BOOKS.length?BOOKS.map(b=>{
+    return `<span style="display:inline-flex;align-items:center;gap:5px;background:#0f172a;border:1px solid #334155;border-radius:8px;padding:5px 10px;margin:0 6px 6px 0;font-size:13px">${b}<button onclick="delBook('${b.replace(/'/g,"")}')" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:15px">×</button></span>`;
+  }).join(""):'<div class="empty">Sem marcas.</div>';
+  // atualiza tambem o select de meta
+  el("g-book").innerHTML=bookOptions();
+}
+async function delBook(name){
+  if(!confirm("Apagar a marca '"+name+"'? (não apaga depósitos já feitos)"))return;
+  const d=await (await fetch("/api/books")).json();
+  const b=d.books.find(x=>x.name===name); if(!b)return;
+  await fetch("/api/books/"+b.id,{method:"DELETE"});
+  loadBooksList();
+}
+el("nb-add").onclick=async()=>{
+  const name=el("nb-name").value.trim(); if(!name)return;
+  const r=await fetch("/api/books",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({name})});
+  if(r.ok){el("nb-name").value="";loadBooksList();}
+  else{const d=await r.json();alert(d.error||"Erro.");}
+};
+async function loadGoalsList(){
+  const d=await (await fetch("/api/goals")).json();
+  const box=el("goals-list");
+  if(!d.goals.length){box.innerHTML='<div class="empty">Ainda sem metas.</div>';return;}
+  box.innerHTML=d.goals.map(g=>`<div class="goal"><div class="goal-top">
+    <span><span class="bk">${g.username}</span> · ${g.book}</span>
+    <span class="num"><b>€${(+g.daily_target).toFixed(2)}</b>/dia
+      <button onclick="delGoal(${g.id})" style="background:none;border:none;color:#f87171;cursor:pointer;font-size:15px;margin-left:8px">×</button></span>
+  </div></div>`).join("");
+}
+async function delGoal(id){
+  if(!confirm("Apagar esta meta?"))return;
+  await fetch("/api/goals/"+id,{method:"DELETE"});
+  loadGoalsList();loadProgress();
+}
+el("g-save").onclick=async()=>{
+  const body={user_id:parseInt(el("g-user").value),book:el("g-book").value,
+    daily_target:parseFloat(el("g-target").value)||0};
+  const r=await fetch("/api/goals",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});
+  if(r.ok){el("g-book").value="";el("g-target").value="";loadGoalsList();loadProgress();}
+  else{const d=await r.json();el("g-err").textContent=d.error||"Erro.";}
+};
+el("g-cancel").onclick=()=>el("modal-goals").classList.remove("show");
+document.addEventListener("click",e=>{if(e.target.id==="manage-goals-btn")openGoals();});
+
+(async function(){await loadMe();await loadBooks();refresh();})();
+</script>
+</body>
+</html>
