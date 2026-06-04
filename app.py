@@ -704,7 +704,13 @@ def api_progress():
     return jsonify({"date": day, "progress": items, "is_admin": bool(u["is_admin"])})
 
 
-if __name__ == "__main__":
+# Cria as tabelas ao arrancar — funciona tanto com 'py app.py' como com gunicorn (Railway).
+try:
     init_db()
+except Exception as e:
+    print("[BetLog] aviso ao iniciar a base de dados:", e)
+
+
+if __name__ == "__main__":
     port = int(os.environ.get("PORT", 8001))
     app.run(host="0.0.0.0", port=port, debug=False)
