@@ -419,6 +419,57 @@ def api_summary():
     return jsonify({"per_user": per_user, "total": total, "is_admin": bool(u["is_admin"])})
 
 
+@app.route("/api/by_book")
+@login_required
+def api_by_book():
+    """Resumo POR CASA para um utilizador: depositado, apostado e lucro/prej.
+    Admin pode pedir ?user_id=N; utilizador normal vê só o seu."""
+    u = current_user()
+    target = request.args.get("user_id", type=int)
+    if u["is_admin"] and target:
+        uid = target
+    else:
+        uid = u["id"]
+
+    conn = get_db()
+    cur = conn.cursor()
+    books = {}  # nome da casa -> {deposited, staked, profit, ops, pending}
+
+    def slot(name):
+        return books.setdefault(name or "(sem casa)",
+            {"deposited": 0.0, "staked": 0.0, "profit": 0.0, "ops": 0, "pending": 0})
+
+    # 1) depositado por casa
+    cur.execute(q("SELECT book, amount FROM deposits WHERE user_id=?"), (uid,))
+    for bname, amount in cur.fetchall():
+        slot(bname)["deposited"] = round(slot(bname)["deposited"] + float(amount or 0), 2)
+
+    # 2) apostado e lucro por casa (cada perna pertence a uma casa)
+    cur.execute(q("""SELECT o.id, o.status FROM ops o WHERE o.user_id=?"""), (uid,))
+    ops = cur.fetchall()
+    for oid, ostatus in ops:
+        ostatus = ostatus or "pending"
+        cur.execute(q("SELECT book,stake,odd,won FROM legs WHERE op_id=?"), (oid,))
+        for bname, stake, odd, won in cur.fetchall():
+            s = slot(bname)
+            stake = float(stake or 0)
+            s["staked"] = round(s["staked"] + stake, 2)
+            s["ops"] += 1
+            if ostatus == "pending":
+                s["pending"] += 1
+            else:
+                # lucro desta perna: retorno (se ganhou) menos o stake
+                ret = stake * float(odd or 0) if won else 0.0
+                s["profit"] = round(s["profit"] + (ret - stake), 2)
+
+    cur.close()
+    conn.close()
+    # transforma em lista ordenada por casa
+    out = [{"book": k, **v} for k, v in books.items()]
+    out.sort(key=lambda x: x["book"].lower())
+    return jsonify({"by_book": out, "user_id": uid})
+
+
 # --- Gestão de utilizadores (admin) ---
 @app.route("/api/users", methods=["GET"])
 @admin_required

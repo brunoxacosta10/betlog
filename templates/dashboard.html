@@ -114,6 +114,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#38bdf8}
         <button id="newuser-btn">+ Novo utilizador</button>
       </div>
       <div id="per-user"></div>
+      <div id="by-book-box" style="display:none;margin-top:18px">
+        <h2 style="font-size:16px">📊 Resumo por casa <span id="by-book-who" style="color:#7c8aa5;font-weight:400"></span></h2>
+        <div id="by-book"></div>
+      </div>
     </div>
     <h2 id="pend-title">⏳ Pendentes (à espera de resultado)</h2>
     <div id="pending-ops"></div>
@@ -271,12 +275,35 @@ async function loadUsersFilter(){
   const sel=el("filter-user");
   sel.innerHTML='<option value="">Todos</option>'+d.users.map(u=>`<option value="${u.id}">${u.username}</option>`).join("");
 }
+// resumo por casa do utilizador selecionado
+async function loadByBook(){
+  const box=el("by-book-box");
+  if(!ME||!ME.is_admin){ box.style.display="none"; return; }
+  const uid=el("filter-user").value;
+  if(!uid){ box.style.display="none"; return; }  // só quando um utilizador está escolhido
+  const sel=el("filter-user");
+  const uname=sel.options[sel.selectedIndex].text;
+  const d=await (await fetch("/api/by_book?user_id="+uid)).json();
+  el("by-book-who").textContent="· "+uname;
+  if(!d.by_book.length){
+    el("by-book").innerHTML='<div class="empty">Sem dados para esta pessoa.</div>';
+  }else{
+    el("by-book").innerHTML=d.by_book.map(b=>{
+      const profCls=b.profit>=0?'pos':'neg';
+      return `<div class="op"><div class="op-top">
+        <div><div class="op-ev">${b.book}</div>
+          <div class="op-meta">Depositado: €${b.deposited.toFixed(2)} · Apostado: €${b.staked.toFixed(2)}${b.pending?` · ${b.pending} pendentes`:''}</div></div>
+        <div class="op-prof ${profCls}">${fmt(b.profit)}</div></div></div>`;
+    }).join("");
+  }
+  box.style.display="block";
+}
 async function delOp(id){
   if(!confirm("Apagar esta operação?"))return;
   await fetch("/api/ops/"+id,{method:"DELETE"});
   refresh();
 }
-function refresh(){loadSummary();loadOps();loadProgress();}
+function refresh(){loadSummary();loadOps();loadProgress();loadByBook();}
 
 // ---- Abas ----
 function showTab(t){
@@ -412,7 +439,7 @@ function openNewUser(){
 el("pwbtn").onclick=e=>{e.preventDefault();openPw();};
 el("m2-cancel").onclick=()=>el("modal2").classList.remove("show");
 document.addEventListener("click",e=>{if(e.target.id==="newuser-btn")openNewUser();});
-document.addEventListener("change",e=>{if(e.target.id==="filter-user"){loadOps();
+document.addEventListener("change",e=>{if(e.target.id==="filter-user"){loadOps();loadByBook();
   el("ops-title").textContent=e.target.value?"Operações de "+e.target.selectedOptions[0].text:"Todas as operações";}});
 
 // ---- Depósito ----
