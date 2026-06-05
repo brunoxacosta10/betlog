@@ -114,10 +114,10 @@ input:focus,select:focus,textarea:focus{outline:none;border-color:#38bdf8}
         <button id="newuser-btn">+ Novo utilizador</button>
       </div>
       <div id="per-user"></div>
-      <div id="by-book-box" style="display:none;margin-top:18px">
-        <h2 style="font-size:16px">📊 Resumo por casa <span id="by-book-who" style="color:#7c8aa5;font-weight:400"></span></h2>
-        <div id="by-book"></div>
-      </div>
+    </div>
+    <div class="admin-bar" style="margin-bottom:14px">
+      <label style="font-size:13px;color:#7c8aa5;align-self:center">Casa:</label>
+      <select id="filter-book"><option value="">Todas as casas</option></select>
     </div>
     <h2 id="pend-title">⏳ Pendentes (à espera de resultado)</h2>
     <div id="pending-ops"></div>
@@ -227,8 +227,17 @@ async function loadMe(){ ME=await (await fetch("/api/me")).json();
   el("who").textContent=ME.username+(ME.is_admin?" (admin)":"");
   if(ME.is_admin){el("admin-zone").style.display="block";loadUsersFilter();}
 }
+// monta a query com os filtros ativos (utilizador + casa)
+function filterQS(){
+  const params=[];
+  const uf=ME&&ME.is_admin?el("filter-user").value:"";
+  if(uf) params.push("user_id="+encodeURIComponent(uf));
+  const bf=el("filter-book")?el("filter-book").value:"";
+  if(bf) params.push("book="+encodeURIComponent(bf));
+  return params.length?("?"+params.join("&")):"";
+}
 async function loadSummary(){
-  const d=await (await fetch("/api/summary")).json();
+  const d=await (await fetch("/api/summary"+filterQS())).json();
   const p=el("k-profit"); p.textContent=fmt(d.total.profit);
   p.className="v "+(d.total.profit>=0?"pos":"neg");
   el("k-staked").textContent="€"+d.total.staked.toFixed(2);
@@ -243,9 +252,7 @@ async function loadSummary(){
   }
 }
 async function loadOps(){
-  const uf=ME&&ME.is_admin?el("filter-user").value:"";
-  const url="/api/ops"+(uf?`?user_id=${uf}`:"");
-  const d=await (await fetch(url)).json();
+  const d=await (await fetch("/api/ops"+filterQS())).json();
   OPS=d.ops;
   const pend=d.ops.filter(o=>o.status==="pending");
   const resolved=d.ops.filter(o=>o.status!=="pending");
@@ -275,35 +282,23 @@ async function loadUsersFilter(){
   const sel=el("filter-user");
   sel.innerHTML='<option value="">Todos</option>'+d.users.map(u=>`<option value="${u.id}">${u.username}</option>`).join("");
 }
-// resumo por casa do utilizador selecionado
-async function loadByBook(){
-  const box=el("by-book-box");
-  if(!ME||!ME.is_admin){ box.style.display="none"; return; }
-  const uid=el("filter-user").value;
-  if(!uid){ box.style.display="none"; return; }  // só quando um utilizador está escolhido
-  const sel=el("filter-user");
-  const uname=sel.options[sel.selectedIndex].text;
-  const d=await (await fetch("/api/by_book?user_id="+uid)).json();
-  el("by-book-who").textContent="· "+uname;
-  if(!d.by_book.length){
-    el("by-book").innerHTML='<div class="empty">Sem dados para esta pessoa.</div>';
-  }else{
-    el("by-book").innerHTML=d.by_book.map(b=>{
-      const profCls=b.profit>=0?'pos':'neg';
-      return `<div class="op"><div class="op-top">
-        <div><div class="op-ev">${b.book}</div>
-          <div class="op-meta">Depositado: €${b.deposited.toFixed(2)} · Apostado: €${b.staked.toFixed(2)}${b.pending?` · ${b.pending} pendentes`:''}</div></div>
-        <div class="op-prof ${profCls}">${fmt(b.profit)}</div></div></div>`;
-    }).join("");
-  }
-  box.style.display="block";
+// carrega as casas no filtro de casa
+async function loadBooksFilter(){
+  const sel=el("filter-book"); if(!sel) return;
+  try{
+    const d=await (await fetch("/api/books")).json();
+    const cur=sel.value;
+    sel.innerHTML='<option value="">Todas as casas</option>'+
+      (d.books||[]).map(b=>`<option value="${b.name}">${b.name}</option>`).join("");
+    sel.value=cur;
+  }catch(e){}
 }
 async function delOp(id){
   if(!confirm("Apagar esta operação?"))return;
   await fetch("/api/ops/"+id,{method:"DELETE"});
   refresh();
 }
-function refresh(){loadSummary();loadOps();loadProgress();loadByBook();}
+function refresh(){loadSummary();loadOps();loadProgress();}
 
 // ---- Abas ----
 function showTab(t){
@@ -439,8 +434,11 @@ function openNewUser(){
 el("pwbtn").onclick=e=>{e.preventDefault();openPw();};
 el("m2-cancel").onclick=()=>el("modal2").classList.remove("show");
 document.addEventListener("click",e=>{if(e.target.id==="newuser-btn")openNewUser();});
-document.addEventListener("change",e=>{if(e.target.id==="filter-user"){loadOps();loadByBook();
-  el("ops-title").textContent=e.target.value?"Operações de "+e.target.selectedOptions[0].text:"Todas as operações";}});
+document.addEventListener("change",e=>{
+  if(e.target.id==="filter-user"){loadOps();loadSummary();
+    el("ops-title").textContent=e.target.value?"Operações de "+e.target.selectedOptions[0].text:"Todas as operações";}
+  if(e.target.id==="filter-book"){loadOps();loadSummary();}
+});
 
 // ---- Depósito ----
 el("dep-fab").onclick=()=>{
@@ -474,6 +472,7 @@ async function loadBooksList(){
   }).join(""):'<div class="empty">Sem marcas.</div>';
   // atualiza tambem o select de meta
   el("g-book").innerHTML=bookOptions();
+  loadBooksFilter();
 }
 async function delBook(name){
   if(!confirm("Apagar a marca '"+name+"'? (não apaga depósitos já feitos)"))return;
@@ -513,7 +512,7 @@ el("g-save").onclick=async()=>{
 el("g-cancel").onclick=()=>el("modal-goals").classList.remove("show");
 document.addEventListener("click",e=>{if(e.target.id==="manage-goals-btn")openGoals();});
 
-(async function(){await loadMe();await loadBooks();refresh();})();
+(async function(){await loadMe();await loadBooks();loadBooksFilter();refresh();})();
 </script>
 </body>
 </html>

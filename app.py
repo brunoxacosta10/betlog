@@ -253,6 +253,7 @@ def api_ops_list():
         cur.execute(q(f"""SELECT {cols} FROM ops o JOIN users us ON us.id=o.user_id
                           WHERE o.user_id=? ORDER BY o.op_date DESC, o.id DESC"""), (u["id"],))
     ops = cur.fetchall()
+    book_filter = (request.args.get("book") or "").strip()
     result = []
     for o in ops:
         oid, ouid, odate, oevent, otype, onotes, ostatus, ouser = (
@@ -262,6 +263,11 @@ def api_ops_list():
         legrows = cur.fetchall()
         legs = [{"id": l[0], "book": l[1], "outcome": l[2],
                  "stake": l[3], "odd": l[4], "won": l[5]} for l in legrows]
+        # filtro por casa: só operações com essa casa, e só a perna dessa casa
+        if book_filter:
+            legs = [lg for lg in legs if (lg["book"] or "") == book_filter]
+            if not legs:
+                continue  # esta operação não tem a casa filtrada
         profit, staked, ret = op_profit(legs, ostatus)
         result.append({"id": oid, "user_id": ouid, "op_date": str(odate),
                        "event": oevent, "bet_type": otype, "notes": onotes,
@@ -382,8 +388,10 @@ def api_ops_delete(op_id):
 @app.route("/api/summary")
 @login_required
 def api_summary():
-    """Totais. Admin: por pessoa + global. Utilizador: só os seus."""
+    """Totais. Admin: por pessoa + global. Utilizador: só os seus.
+    Aceita ?book= para filtrar só por uma casa (conta só essa perna)."""
     u = current_user()
+    book_filter = (request.args.get("book") or "").strip()
     conn = get_db()
     cur = conn.cursor()
     if u["is_admin"]:
@@ -399,12 +407,17 @@ def api_summary():
         oid = o[0]
         uname = o[2]
         ostatus = o[3] or "pending"
-        cur.execute(q("SELECT stake,odd,won FROM legs WHERE op_id=?"), (oid,))
+        cur.execute(q("SELECT book,stake,odd,won FROM legs WHERE op_id=?"), (oid,))
         legrows = cur.fetchall()
-        legs = [{"stake": r[0], "odd": r[1], "won": r[2]} for r in legrows]
+        legs = [{"book": r[0], "stake": r[1], "odd": r[2], "won": r[3]} for r in legrows]
+        # filtro por casa: conta só a perna dessa casa
+        if book_filter:
+            legs = [lg for lg in legs if (lg["book"] or "") == book_filter]
+            if not legs:
+                continue
         profit, staked, _ = op_profit(legs, ostatus)
         pu = per_user.setdefault(uname, {"profit": 0.0, "staked": 0.0, "ops": 0, "pending": 0})
-        pu["staked"] = round(pu["staked"] + staked, 2)     # apostado conta tudo
+        pu["staked"] = round(pu["staked"] + staked, 2)
         pu["ops"] += 1
         total["staked"] = round(total["staked"] + staked, 2)
         total["ops"] += 1
@@ -412,7 +425,7 @@ def api_summary():
             pu["pending"] += 1
             total["pending"] += 1
         else:
-            pu["profit"] = round(pu["profit"] + (profit or 0), 2)   # lucro só resolvidas
+            pu["profit"] = round(pu["profit"] + (profit or 0), 2)
             total["profit"] = round(total["profit"] + (profit or 0), 2)
     cur.close()
     conn.close()
